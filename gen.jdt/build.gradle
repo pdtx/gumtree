@@ -3,3 +3,9 @@ description = 'GumTree tree generator for Java code (Eclipse JDT based).'
 dependencies {
 	implementation 'org.eclipse.jdt:org.eclipse.jdt.core:3.23.0'
 }
+
+jar {
+	manifest {
+		attributes 'Main-Class': 'src.main.java.com.github.gumtreediff.gen.jdt.JdtTreeGenerator.java'
+	}
+}

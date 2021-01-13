@@ -1,1 +1,7 @@
 description = 'GumTree abstract client module.'
+
+jar.enabled = true
+
+dependencies {
+    compile project(":gen.jdt")
+}
