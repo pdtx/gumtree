@@ -1,3 +1,4 @@
+rootProject.name='gumtree'
 include 'benchmark',
         'client',
         'client.diff',
