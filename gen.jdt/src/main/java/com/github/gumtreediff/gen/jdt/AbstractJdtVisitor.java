@@ -20,16 +20,17 @@
 
 package com.github.gumtreediff.gen.jdt;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.List;
-
 import com.github.gumtreediff.gen.jdt.cd.EntityType;
+import com.github.gumtreediff.tree.DefaultTree;
+import com.github.gumtreediff.tree.Tree;
+import com.github.gumtreediff.tree.TreeContext;
 import com.github.gumtreediff.tree.Type;
 import org.eclipse.jdt.core.dom.*;
 
-import com.github.gumtreediff.tree.Tree;
-import com.github.gumtreediff.tree.TreeContext;
+import java.lang.reflect.Field;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
 
 import static com.github.gumtreediff.tree.TypeSet.type;
 
@@ -38,6 +39,9 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
     protected TreeContext context = new TreeContext();
 
     protected Deque<Tree> trees = new ArrayDeque<>();
+
+    public int[] lineEndTable;
+    int length = 0;
 
     public AbstractJdtVisitor() {
         super(true);
@@ -64,7 +68,22 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
         Tree t = context.createTree(type, label);
         t.setPos(startPosition);
         t.setLength(length);
-
+        try{
+            if(n instanceof CompilationUnit) {
+                Field f = n.getClass().getDeclaredField("lineEndTable");
+                if(f != null){
+                    f.setAccessible(true);
+                    lineEndTable =(int[]) f.get(n);
+                    this.length = lineEndTable.length;
+                }
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e){
+            e.printStackTrace();
+        }
+        if(lineEndTable != null){
+            ((DefaultTree)t).setBeginLine(getLine(t.getPos()));
+            ((DefaultTree)t).setEndLine(getLine(t.getPos()+t.getLength()));
+        }
         if (trees.isEmpty())
             context.setRoot(t);
         else {
@@ -82,6 +101,20 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
             t.setMetadata("id", getId((EnumDeclaration) n));
 
         trees.push(t);
+    }
+
+    private int getLine(int pos) {
+        if(lineEndTable != null){
+            int i = 0;
+            while(i < length && pos > lineEndTable[i]){
+                if(pos == lineEndTable[i]){
+                    break;
+                }
+                i++;
+            }
+            return i+1;
+        }
+        return -1;
     }
 
     private String getId(TypeDeclaration d) {

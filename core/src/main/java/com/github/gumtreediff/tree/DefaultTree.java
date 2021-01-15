@@ -29,6 +29,27 @@ public class DefaultTree extends AbstractTree implements Tree {
 
     private String label;
 
+
+    int beginLine = -1;
+
+    public int getBeginLine() {
+        return beginLine;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public void setEndLine(int endLine) {
+        this.endLine = endLine;
+    }
+
+    public void setBeginLine(int beginLine) {
+        this.beginLine = beginLine;
+    }
+
+    int endLine = -1;
+
     private int pos;
     private int length;
 

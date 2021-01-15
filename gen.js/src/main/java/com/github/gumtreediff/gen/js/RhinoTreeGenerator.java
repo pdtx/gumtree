@@ -32,6 +32,7 @@ import org.mozilla.javascript.ast.AstRoot;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 
 @Register(id = "js-rhino", accept = "\\.js$", priority = Registry.Priority.MAXIMUM)
 public class RhinoTreeGenerator extends TreeGenerator {
@@ -44,7 +45,13 @@ public class RhinoTreeGenerator extends TreeGenerator {
         env.setLanguageVersion(Context.VERSION_ES6);
         Parser p = new Parser(env);
         try {
-            AstRoot root = p.parse(r, null, 1);
+            StringWriter sw = new StringWriter();
+            char[] arr =new char[1024 * 4];
+            int n;
+            while (-1!=(n=r.read(arr))){
+                sw.write(arr,0,n);
+            }
+            AstRoot root = p.parse(sw.toString(), null, 1);
             RhinoTreeVisitor visitor = new RhinoTreeVisitor(root);
             root.visitAll(visitor);
             return visitor.getTreeContext();
@@ -55,4 +62,5 @@ public class RhinoTreeGenerator extends TreeGenerator {
             throw new SyntaxException(message, e);
         }
     }
+
 }

@@ -35,6 +35,8 @@ public class TreeContext {
 
     private final MetadataSerializers serializers = new MetadataSerializers();
 
+    private Map<Integer, Integer> positionLine;
+
     private Tree root;
 
     @Override

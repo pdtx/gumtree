@@ -1,6 +1,11 @@
 description = 'GumTree abstract client module.'
 
-dependencies {
+jar.enabled = true
 
+dependencies {
+    compile project(":gen.js")
     compile project(":gen.javaparser")
+    compile project(":gen.jdt")
+
+    compile "org.antlr:antlr:3.5.2"
 }

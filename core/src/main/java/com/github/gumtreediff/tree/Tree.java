@@ -34,6 +34,7 @@ public interface Tree {
 
     int NO_POS = -1;
 
+
     /**
      * Returns a list containing the node and its descendants, ordered using a pre-order.
      *

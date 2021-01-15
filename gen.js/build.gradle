@@ -3,3 +3,9 @@ description = 'GumTree tree generator for JavaScript code (Rhino based).'
 dependencies {
 	implementation 'org.mozilla:rhino:1.7.13'
 }
+
+jar {
+	manifest {
+		attributes 'Main-Class' : 'com.github.gumtreediff.gen.js.RhinoTreeGenerator'
+	}
+}

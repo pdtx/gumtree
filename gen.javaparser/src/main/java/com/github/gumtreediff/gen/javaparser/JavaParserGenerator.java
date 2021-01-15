@@ -25,8 +25,6 @@ import com.github.gumtreediff.gen.SyntaxException;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.io.LineReader;
 import com.github.gumtreediff.tree.TreeContext;
-import com.github.javaparser.JavaParser;
-import com.github.javaparser.ParseException;
 import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;

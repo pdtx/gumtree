@@ -20,14 +20,14 @@
 
 package com.github.gumtreediff.gen.js;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.github.gumtreediff.tree.DefaultTree;
+import com.github.gumtreediff.tree.Tree;
+import com.github.gumtreediff.tree.TreeContext;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.*;
 
-import com.github.gumtreediff.tree.Tree;
-import com.github.gumtreediff.tree.TreeContext;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.github.gumtreediff.tree.TypeSet.type;
 
@@ -51,9 +51,15 @@ public class RhinoTreeVisitor implements NodeVisitor {
         if (node instanceof AstRoot)
             return true;
         else {
-            Tree t = buildTree(node);
+            DefaultTree t = (DefaultTree) buildTree(node);
             Tree p = trees.get(node.getParent());
             p.addChild(t);
+
+            t.setBeginLine(node.getLineno());
+            if(node instanceof FunctionNode){
+                t.setEndLine(((FunctionNode)node).getEndLineno());
+            }
+
 
             if (node instanceof Name) {
                 Name name = (Name) node;

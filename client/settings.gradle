@@ -1,1 +1,3 @@
 includeFlat 'gen.javaparser'
+includeFlat 'gen.js'
+includeFlat 'gen.jdt'
