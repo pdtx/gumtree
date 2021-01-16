@@ -106,7 +106,7 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
     private int getLine(int pos) {
         if(lineEndTable != null){
             int i = 0;
-            while(i < length && pos > lineEndTable[i]){
+            while(i < length && pos >= lineEndTable[i]){
                 if(pos == lineEndTable[i]){
                     break;
                 }
