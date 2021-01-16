@@ -41,7 +41,7 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
     protected Deque<Tree> trees = new ArrayDeque<>();
 
     public int[] lineEndTable;
-    int length = 0;
+    int linesNum = 0;
 
     public AbstractJdtVisitor() {
         super(true);
@@ -74,47 +74,46 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
                 if(f != null){
                     f.setAccessible(true);
                     lineEndTable =(int[]) f.get(n);
-                    this.length = lineEndTable.length;
+                    this.linesNum = lineEndTable.length;
                 }
             }
         } catch (NoSuchFieldException | IllegalAccessException e){
             e.printStackTrace();
         }
-        if(lineEndTable != null){
-            ((DefaultTree)t).setBeginLine(getLine(t.getPos()));
-            ((DefaultTree)t).setEndLine(getLine(t.getPos()+t.getLength()));
-        }
-        if (trees.isEmpty())
+        ((DefaultTree)t).setBeginLine(getLine(t.getPos()));
+        ((DefaultTree)t).setEndLine(getLine(t.getPos()+t.getLength()));
+        if (trees.isEmpty()) {
             context.setRoot(t);
-        else {
+        } else {
             Tree parent = trees.peek();
             t.setParentAndUpdateChildren(parent);
         }
 
-        if (n instanceof TypeDeclaration)
+        if (n instanceof TypeDeclaration) {
             t.setMetadata("id", getId((TypeDeclaration) n));
-        else if (n instanceof MethodDeclaration)
+        } else if (n instanceof MethodDeclaration) {
             t.setMetadata("id", getId((MethodDeclaration) n));
-        else if (n instanceof FieldDeclaration)
+        } else if (n instanceof FieldDeclaration) {
             t.setMetadata("id", getId((FieldDeclaration) n));
-        else if (n instanceof EnumDeclaration)
+        } else if (n instanceof EnumDeclaration) {
             t.setMetadata("id", getId((EnumDeclaration) n));
+        }
 
         trees.push(t);
     }
 
     private int getLine(int pos) {
-        if(lineEndTable != null){
-            int i = 0;
-            while(i < length && pos > lineEndTable[i]){
-                if(pos == lineEndTable[i]){
-                    break;
-                }
-                i++;
-            }
-            return i+1;
+        if(lineEndTable == null){
+            return -1;
         }
-        return -1;
+        int i = 0;
+        while(i < linesNum && pos >= lineEndTable[i]){
+            if(pos == lineEndTable[i]){
+                break;
+            }
+            i++;
+        }
+        return i+1;
     }
 
     private String getId(TypeDeclaration d) {
@@ -129,8 +128,9 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
         StringBuilder b = new StringBuilder();
         b.append("Method ");
         b.append(d.getName() + "(");
-        for (SingleVariableDeclaration v : (List<SingleVariableDeclaration>) d.parameters())
+        for (SingleVariableDeclaration v : (List<SingleVariableDeclaration>) d.parameters()) {
             b.append(" " + v.getType().toString());
+        }
         b.append(")");
         return b.toString();
     }
