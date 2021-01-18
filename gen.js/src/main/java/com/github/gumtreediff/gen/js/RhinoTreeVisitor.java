@@ -60,7 +60,6 @@ public class RhinoTreeVisitor implements NodeVisitor {
                 t.setEndLine(((FunctionNode)node).getEndLineno());
             }
 
-
             if (node instanceof Name) {
                 Name name = (Name) node;
                 t.setLabel(name.getIdentifier());

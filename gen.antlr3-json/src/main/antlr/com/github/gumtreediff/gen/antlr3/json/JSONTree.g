@@ -23,13 +23,13 @@ import java.io.OutputStreamWriter;
         String exponent = (exponentToken == null) ? null : exponentToken.getText().substring(1); // remove the 'e' prefix if there
         boolean isReal = numberBody.indexOf('.') >= 0 || exponent != null;
         if (!isReal) {
-            return new Integer(numberBody);
+            return Integer.valueOf(numberBody);
         } else {
             double result = Double.parseDouble(numberBody);
             if (exponent != null) {
                 result = result * Math.pow(10.0f, Double.parseDouble(exponent));
             }
-            return new Double(result);
+            return Double.valueOf(result);
         }
     }
     

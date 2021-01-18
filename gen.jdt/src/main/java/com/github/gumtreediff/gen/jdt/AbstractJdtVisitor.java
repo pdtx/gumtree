@@ -74,7 +74,7 @@ public abstract class AbstractJdtVisitor extends ASTVisitor {
                 if(f != null){
                     f.setAccessible(true);
                     lineEndTable =(int[]) f.get(n);
-                    this.linesNum = lineEndTable.length;
+                    linesNum = lineEndTable.length;
                 }
             }
         } catch (NoSuchFieldException | IllegalAccessException e){
