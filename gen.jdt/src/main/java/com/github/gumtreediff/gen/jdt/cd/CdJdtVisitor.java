@@ -20,10 +20,10 @@
 
 package com.github.gumtreediff.gen.jdt.cd;
 
-import java.util.List;
-
 import com.github.gumtreediff.gen.jdt.AbstractJdtVisitor;
 import org.eclipse.jdt.core.dom.*;
+
+import java.util.List;
 
 /**
  * Combination of two ChangeDistiller's AST visitors:
@@ -550,7 +550,7 @@ public class CdJdtVisitor extends AbstractJdtVisitor {
 
     @Override
     public boolean visit(SwitchCase node) {
-        pushNode(node, node.getExpression() != null ? node.getExpression().toString() : "default");
+        pushNode(node, node.expressions() != null ? node.expressions().toString() : "default");
         return false;
     }
 

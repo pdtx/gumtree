@@ -113,12 +113,12 @@ public class ChawatheScriptGenerator implements EditScriptGenerator {
                 if (!x.equals(origDst)) { // TODO => x != origDst // Case of the root
                     Tree v = w.getParent();
                     if (!w.getLabel().equals(x.getLabel())) {
-                        actions.add(new Update(copyToOrig.get(w), x.getLabel()));
+                        actions.add(new Update(copyToOrig.get(w), x));
                         w.setLabel(x.getLabel());
                     }
                     if (!z.equals(v)) {
                         int k = findPos(x);
-                        Action mv = new Move(copyToOrig.get(w), copyToOrig.get(z), k);
+                        Action mv = new Move(copyToOrig.get(w), copyToOrig.get(z), k, x);
                         actions.add(mv);
                         int oldk = w.positionInParent();
                         w.getParent().getChildren().remove(oldk);
@@ -168,7 +168,7 @@ public class ChawatheScriptGenerator implements EditScriptGenerator {
                     if (!lcs.contains(new Mapping(a, b))) {
                         a.getParent().getChildren().remove(a); // remove this node directly.
                         int k = findPos(b); // find insert position AFTER removing node from old place.
-                        Action mv = new Move(copyToOrig.get(a), copyToOrig.get(w), k);
+                        Action mv = new Move(copyToOrig.get(a), copyToOrig.get(w), k, a);
                         actions.add(mv);
                         w.getChildren().add(k, a);
                         a.setParent(w);

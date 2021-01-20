@@ -23,11 +23,11 @@ package com.github.gumtreediff.actions.model;
 import com.github.gumtreediff.tree.Tree;
 
 public class Update extends Action {
-    private String value;
+    private Tree value;
 
-    public Update(Tree node, String value) {
+    public Update(Tree node, Tree src) {
         super(node);
-        this.value = value;
+        this.value = src;
     }
 
     @Override
@@ -35,7 +35,7 @@ public class Update extends Action {
         return "update-node";
     }
 
-    public String getValue() {
+    public Tree getValue() {
         return this.value;
     }
 
@@ -48,6 +48,7 @@ public class Update extends Action {
                 getValue());
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(super.equals(o)))
             return false;

@@ -56,6 +56,7 @@ public class RhinoTreeVisitor implements NodeVisitor {
             p.addChild(t);
 
             t.setBeginLine(node.getLineno());
+            t.setEndLine(node.getLineno());
             if(node instanceof FunctionNode){
                 t.setEndLine(((FunctionNode)node).getEndLineno());
             }

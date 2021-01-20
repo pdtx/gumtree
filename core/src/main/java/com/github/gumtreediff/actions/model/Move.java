@@ -23,9 +23,17 @@ package com.github.gumtreediff.actions.model;
 import com.github.gumtreediff.tree.Tree;
 
 public class Move extends TreeAddition {
-    public Move(Tree node, Tree parent, int pos) {
+    private Tree value;
+
+    public Move(Tree node, Tree parent, int pos, Tree value) {
         super(node, parent, pos);
+        this.value = value;
     }
+
+    public Tree getValue() {
+        return value;
+    }
+
 
     @Override
     public String getName() {

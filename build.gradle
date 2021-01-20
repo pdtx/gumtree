@@ -13,6 +13,11 @@ allprojects {
         mavenCentral()
         jcenter()
     }
+
+    apply plugin: 'application'
+    mainClassName = "com.github.gumtreediff.client.Run"
+    applicationDefaultJvmArgs = [
+            '-Dfile.encoding=UTF-8']
 }
 
 ext.isRelease = !project.version.endsWith("SNAPSHOT")

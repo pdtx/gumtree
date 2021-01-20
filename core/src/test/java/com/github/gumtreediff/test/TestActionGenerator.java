@@ -159,9 +159,9 @@ public class TestActionGenerator {
         assertEquals(5, actions.size());
         assertThat(actions, hasItems(
                 new Insert(dst, null, 0),
-                new Move(src, dst, 0),
+                new Move(src, dst, 0, dst),
                 new Insert(dst.getChild("0.1.1"), src.getChild("1"), 1),
-                new Update(src.getChild("1.3"), "r2"),
+                new Update(src.getChild("1.3"), dst.getChild("1.3")),
                 new Delete(src.getChild("1.1"))
         ));
 
@@ -169,9 +169,9 @@ public class TestActionGenerator {
         assertEquals(5, actions.size());
         assertThat(actions, hasItems(
                 new Insert(dst, null, 0),
-                new Move(src, dst, 0),
+                new Move(src, dst, 0, dst),
                 new Insert(dst.getChild("0.1.1"), src.getChild("1"), 1),
-                new Update(src.getChild("1.3"), "r2"),
+                new Update(src.getChild("1.3"), dst.getChild("1.3")),
                 new Delete(src.getChild("1.1"))
         ));
 
