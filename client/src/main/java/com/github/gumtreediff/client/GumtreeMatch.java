@@ -14,10 +14,7 @@ import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeContext;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.github.gumtreediff.client.GumtreeMatch.Language.JAVA;
 import static com.github.gumtreediff.client.GumtreeMatch.Language.JS;
@@ -32,6 +29,11 @@ public class GumtreeMatch {
 
     static Map<String, Set<String>> emptyResult = new HashMap<>(0);
     static String charsetName = "UTF-8";
+    static String separator = "#";
+    static String KEY_INSERT = "INSERT";
+    static String KEY_MOVE = "MOVE";
+    static String KEY_DELETE = "DELETE";
+    static String KEY_UPDATE = "UPDATE";
 
     /**
      * 对两个文件进行匹
@@ -90,11 +92,11 @@ public class GumtreeMatch {
         try {
             TreeContext src = null;
             TreeContext dst = null;
-            if (type.equals(JS)) {
+            if (type.equals(Language.JS)) {
                 src = new RhinoTreeGenerator().generateFrom().string(srcString);
                 dst = new RhinoTreeGenerator().generateFrom().string(dstString);
             }
-            if (type.equals(JAVA)) {
+            if (type.equals(Language.JAVA)) {
                 src = new JdtTreeGenerator().generateFrom().string(srcString);
                 dst =  new JdtTreeGenerator().generateFrom().string(dstString);
             }
@@ -141,33 +143,81 @@ public class GumtreeMatch {
                 dstNode = ((Move)a).getValue();
                 int dstBegin = ((DefaultTree)dstNode).getBeginLine();
                 int dstEnd = ((DefaultTree)dstNode).getEndLine();
-                move.add(begin+"-"+end+ ","+ dstBegin+ "-"+dstEnd);
+                move.add(begin+"-"+end+ separator+ dstBegin+ "-"+dstEnd);
             }else if(a instanceof Insert || a instanceof TreeInsert){
                 insert.add(begin+"-"+end);
             }else if(a instanceof Update){
                 dstNode = ((Update)a).getValue();
                 int dstBegin = ((DefaultTree)dstNode).getBeginLine();
                 int dstEnd = ((DefaultTree)dstNode).getEndLine();
-                update.add(begin+"-"+end+","+ dstBegin+ "-"+dstEnd);
+                update.add(begin+"-"+end+ separator + dstBegin+ "-"+dstEnd);
             }else if (a instanceof Delete || a instanceof TreeDelete){
                 delete.add(begin+"-"+end);
             }
         }
-        result.put("INSERT", insert);
-        result.put("UPDATE", update);
-        result.put("DELETE", delete);
-        result.put("MOVE", move);
-        return fixConflict(result);
+        result.put(KEY_INSERT, insert);
+        result.put(KEY_UPDATE, update);
+        result.put(KEY_DELETE, delete);
+        result.put(KEY_MOVE, move);
+        fixConflict(result);
+        return result;
     }
 
-    private static Map<String, Set<String>> fixConflict(Map<String, Set<String>> map){
-        Map<String, Set<String>> result = new HashMap<>(map.size());
-        // 1. 若UPDATE所在节点pos范围大于MOVE, DELETE, INSERT，则只保留前者
-        // 2. 若MOVE所在节点pos范围大于DELETE, INSERT，则只保留前者
-        // 3. fixme MOVE 中目前存在多个src行号对应一个dst行号的情况
+    private static void fixConflict(Map<String, Set<String>> map){
+        Set<String> update = map.get(KEY_UPDATE);
+        Set<String> insert = map.get(KEY_INSERT);
+        Set<String> delete = map.get(KEY_DELETE);
 
+        // 1. 若MOVE中存在多个src行号对应一个dst行号的情况，且若src相邻，则考虑合并为一个UPDATE
+        // 否则记作多个DELETE和1个INSERT
+        Set<String> fixMove = mergeLines(insert, delete, update, new ArrayList<>(map.get(KEY_MOVE)));
 
-        return result;
+        // 2. 若MOVE所在节点行号范围与DELETE, INSERT相同，则只保留前者
+        for(String s : fixMove){
+            insert.removeIf(i -> i.equals(s.split(separator)[1]));
+            delete.removeIf(d -> d.equals(s.split(separator)[0]));
+        }
+
+       // 3. 若UPDATE所在节点行号存在多个src对应1个dst的情况，若src相连，则合并，否则记作多个DELETE和INSERT
+       Set<String> fixUpdate = mergeLines(insert, delete, update, new ArrayList<>(update));
+
+       // 4. 若UPDATE所在节点行号范围与MOVE,INSERT,DELETE相同，则只保留前者
+        for(String s : fixUpdate){
+            fixMove.removeIf(m -> m.equals(s));
+            insert.removeIf(i -> i.equals(s.split(separator)[1]));
+            delete.removeIf(d -> d.equals(s.split(separator)[0]));
+        }
+
+        map.replace(KEY_MOVE, fixMove);
+        map.replace(KEY_UPDATE, fixUpdate);
+    }
+
+    private static Set<String> mergeLines(Set<String> insert, Set<String> delete, Set<String> update, java.util.List<String> list) {
+        Set<String> fixList = new HashSet<>();
+        Map<String, String> tempMap = new TreeMap<>();
+        list.sort(Comparator.naturalOrder());
+        for (String s : list) {
+            String[] temp = s.split(separator);
+            tempMap.putIfAbsent(temp[1], temp[0]);
+            if(temp[0].equals(tempMap.get(temp[1]))){
+                continue;
+            }
+            int lastEndLine = Integer.parseInt(tempMap.get(temp[1]).split("-")[1]);
+            int newBeginLine = Integer.parseInt(temp[0].split("-")[0]);
+            if(newBeginLine - lastEndLine == 1){
+                update.add(tempMap.get(temp[1]).split("-")[0]+ "-" + temp[0].split("-")[1]
+                        + separator + temp[1]);
+            }else {
+                insert.add(temp[1]);
+                delete.add(temp[0]);
+                delete.add(tempMap.get(temp[1]));
+            }
+            tempMap.remove(temp[1]);
+        }
+        for(String s : tempMap.keySet()) {
+            fixList.add(tempMap.get(s) + separator + s);
+        }
+        return fixList;
     }
 
     public static void main(String[] args) {
