@@ -168,18 +168,21 @@ public class GumtreeMatch {
         Set<String> insert = map.get(KEY_INSERT);
         Set<String> delete = map.get(KEY_DELETE);
 
-        // 1. 若MOVE中存在多个src行号对应一个dst行号的情况，且若src相邻，则考虑合并为一个UPDATE
-        // 否则记作多个DELETE和1个INSERT
-        Set<String> fixMove = mergeLines(insert, delete, update, new ArrayList<>(map.get(KEY_MOVE)));
+        // 1. 若MOVE中存在多个src行号对应1个dst行号的情况，且若src相邻，则考虑合并为一个UPDATE，否则记作多个DELETE和1个INSERT
+        // 若UPDATE所在节点行号存在多个src对应1个dst的情况，若src相连，则合并为一个UPDATE，否则记作多个DELETE和1个INSERT
+        Set<String> tempMove = mergeLines(insert, delete, update, new ArrayList<>(map.get(KEY_MOVE)), true);
+        Set<String> tempUpdate = mergeLines(insert, delete, update, new ArrayList<>(update), true);
 
-        // 2. 若MOVE所在节点行号范围与DELETE, INSERT相同，则只保留前者
+       // 2. 若MOVE存在一个src对应多个dst行号的情况，若dst相邻，则考虑合并为一个UPDATE，否则记作1个DELETE和多个INSERT
+        // 若UPDATE存在一个src对应多个dst行号的情况，若dst相邻，则考虑合并为一个UPDATE，否则记作1个DELETE和多个INSERT
+        Set<String> fixMove = mergeLines(insert, delete, tempUpdate, new ArrayList<>(tempMove), false);
+        Set<String> fixUpdate = mergeLines(insert, delete, tempUpdate, new ArrayList<>(tempUpdate), false);
+
+        // 3. 若MOVE所在节点行号范围与DELETE, INSERT相同，则只保留前者
         for(String s : fixMove){
             insert.removeIf(i -> i.equals(s.split(separator)[1]));
             delete.removeIf(d -> d.equals(s.split(separator)[0]));
         }
-
-       // 3. 若UPDATE所在节点行号存在多个src对应1个dst的情况，若src相连，则合并，否则记作多个DELETE和INSERT
-       Set<String> fixUpdate = mergeLines(insert, delete, update, new ArrayList<>(update));
 
        // 4. 若UPDATE所在节点行号范围与MOVE,INSERT,DELETE相同，则只保留前者
         for(String s : fixUpdate){
@@ -192,27 +195,41 @@ public class GumtreeMatch {
         map.replace(KEY_UPDATE, fixUpdate);
     }
 
-    private static Set<String> mergeLines(Set<String> insert, Set<String> delete, Set<String> update, java.util.List<String> list) {
+    private static Set<String> mergeLines(Set<String> insert, Set<String> delete, Set<String> update, java.util.List<String> list, boolean srcsToOneDst) {
+        if(list.isEmpty()){
+            return new HashSet<>(0);
+        }
+        if(list.size() == 1){
+            return new HashSet<>(list);
+        }
         Set<String> fixList = new HashSet<>();
-        Map<String, String> tempMap = new TreeMap<>();
+        Map<String, String> tempMap = new HashMap<>(list.size());
         list.sort(Comparator.naturalOrder());
         for (String s : list) {
             String[] temp = s.split(separator);
-            tempMap.putIfAbsent(temp[1], temp[0]);
-            if(temp[0].equals(tempMap.get(temp[1]))){
+            String key = srcsToOneDst ? temp[1] : temp[0];
+            String value = srcsToOneDst ? temp[0] : temp[1];
+            tempMap.putIfAbsent(key, value);
+            if(value.equals(tempMap.get(key))){
                 continue;
             }
-            int lastEndLine = Integer.parseInt(tempMap.get(temp[1]).split("-")[1]);
-            int newBeginLine = Integer.parseInt(temp[0].split("-")[0]);
+            int lastEndLine = Integer.parseInt(tempMap.get(key).split("-")[1]);
+            int newBeginLine = Integer.parseInt(value.split("-")[0]);
             if(newBeginLine - lastEndLine == 1){
-                update.add(tempMap.get(temp[1]).split("-")[0]+ "-" + temp[0].split("-")[1]
-                        + separator + temp[1]);
-            }else {
+                update.add(srcsToOneDst ? tempMap.get(key).split("-")[0]+ "-" + value.split("-")[1]
+                        + separator + key
+                        : key + separator
+                        + tempMap.get(key).split("-")[0]+ "-" + value.split("-")[1]);
+            }else if(newBeginLine - lastEndLine > 1){
                 insert.add(temp[1]);
                 delete.add(temp[0]);
-                delete.add(tempMap.get(temp[1]));
+                if(srcsToOneDst){
+                    delete.add(tempMap.get(temp[1]));
+                }else {
+                    insert.add(tempMap.get(temp[0]));
+                }
             }
-            tempMap.remove(temp[1]);
+            tempMap.remove(key);
         }
         for(String s : tempMap.keySet()) {
             fixList.add(tempMap.get(s) + separator + s);
@@ -223,9 +240,9 @@ public class GumtreeMatch {
     public static void main(String[] args) {
         // test java of file
         String src = "D:\\gumtree\\javaDiff\\";
-        String commitId = "5cb37305f09fd5fbe128f4d3b7319fb5fd7008fc" +"\\";
-        String srcFile = src + commitId + "src_main_java_com_test_packageTest3_test13.java";
-        String dstFile = src + commitId + "src_main_java_com_test_packageTest3_test13-dst.java";
+        String commitId = "e83bf34374ca9157b344be18c6f56cdaf90ecc11" +"\\";
+        String srcFile = src + commitId + "src_main_java_com_test_packageTest2_testRename_RenameTest1.java";
+        String dstFile = src + commitId + "src_main_java_com_test_packageTest2_testRename_RenameTest1-dst.java";
         String output= src + commitId+ "mapping.json";
         Map<String, Set<String>> result = matchFile(srcFile, dstFile);
         System.out.println(result);
