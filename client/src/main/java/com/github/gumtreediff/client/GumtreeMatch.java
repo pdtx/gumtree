@@ -196,10 +196,7 @@ public class GumtreeMatch {
     }
 
     private static Set<String> mergeLines(Set<String> insert, Set<String> delete, Set<String> update, java.util.List<String> list, boolean srcsToOneDst) {
-        if(list.isEmpty()){
-            return new HashSet<>(0);
-        }
-        if(list.size() == 1){
+        if(list.isEmpty() || list.size() == 1){
             return new HashSet<>(list);
         }
         Set<String> fixList = new HashSet<>();
@@ -231,9 +228,10 @@ public class GumtreeMatch {
             }
             tempMap.remove(key);
         }
-        for(String s : tempMap.keySet()) {
-            fixList.add(tempMap.get(s) + separator + s);
-        }
+        tempMap.keySet().forEach(t -> fixList.add(
+                srcsToOneDst ? tempMap.get(t) + separator + t
+                        : t + separator + tempMap.get(t)
+        ));
         return fixList;
     }
 
