@@ -113,7 +113,7 @@ public class GumtreeMatch {
      * 根据两棵语法树进行匹配
      * @param src 改动后
      * @param dst 改动前
-     * @return 匹配结果
+     * @return 匹配结果 fixme 结果按照行号排序？
      */
     private static Map<String, Set<String>> match(TreeContext src, TreeContext dst){
         if(src == null || dst == null){
@@ -159,17 +159,23 @@ public class GumtreeMatch {
         result.put(KEY_UPDATE, update);
         result.put(KEY_DELETE, delete);
         result.put(KEY_MOVE, move);
+
         fixConflict(result);
+
         return result;
     }
 
+    /**
+     * 处理四种类型之间的行号冲突
+     * @param map 匹配结果集 key: insert, delete, update, move
+     */
     private static void fixConflict(Map<String, Set<String>> map){
         Set<String> update = map.get(KEY_UPDATE);
         Set<String> insert = map.get(KEY_INSERT);
         Set<String> delete = map.get(KEY_DELETE);
 
         // 1. 若MOVE中存在多个src行号对应1个dst行号的情况，且若src相邻，则考虑合并为一个UPDATE，否则记作多个DELETE和1个INSERT
-        // 若UPDATE所在节点行号存在多个src对应1个dst的情况，若src相连，则合并为一个UPDATE，否则记作多个DELETE和1个INSERT
+        // 若UPDATE存在多个src对应1个dst的情况，若src相连，则合并为一个UPDATE，否则记作多个DELETE和1个INSERT
         Set<String> tempMove = mergeLines(insert, delete, update, new ArrayList<>(map.get(KEY_MOVE)), true);
         Set<String> tempUpdate = mergeLines(insert, delete, update, new ArrayList<>(update), true);
 
@@ -178,28 +184,56 @@ public class GumtreeMatch {
         Set<String> fixMove = mergeLines(insert, delete, tempUpdate, new ArrayList<>(tempMove), false);
         Set<String> fixUpdate = mergeLines(insert, delete, tempUpdate, new ArrayList<>(tempUpdate), false);
 
-        // 3. 若MOVE所在节点行号范围与DELETE, INSERT相同，则只保留前者
-        for(String s : fixMove){
-            insert.removeIf(i -> i.equals(s.split(separator)[1]));
-            delete.removeIf(d -> d.equals(s.split(separator)[0]));
-        }
+        // 3. 若UPDATE所在节点行号范围与INSERT,DELETE相同，则移除前者并拆解为DELETE和INSERT
+        // MOVE同上
+        divideLines(insert, delete, fixUpdate);
+        divideLines(insert, delete, fixMove);
 
-       // 4. 若UPDATE所在节点行号范围与MOVE,INSERT,DELETE相同，则只保留前者
-        for(String s : fixUpdate){
-            fixMove.removeIf(m -> m.equals(s));
-            insert.removeIf(i -> i.equals(s.split(separator)[1]));
-            delete.removeIf(d -> d.equals(s.split(separator)[0]));
+        for(String s : insert){
+            fixUpdate.removeIf(u -> u.split(separator)[1].equals(s));
+            fixMove.removeIf(m -> m.split(separator)[1].equals(s));
+        }
+        for(String s : delete){
+            fixUpdate.removeIf(u -> u.split(separator)[0].equals(s));
+            fixMove.removeIf(m -> m.split(separator)[0].equals(s));
         }
 
         map.replace(KEY_MOVE, fixMove);
         map.replace(KEY_UPDATE, fixUpdate);
     }
 
+    /**
+     * 将update和move与insert，delete重复的行号拆解为delete，insert
+     * @param insert 新增集
+     * @param delete 删除集
+     * @param fixSet 待拆解集，这里为update和move
+     */
+    private static void divideLines(Set<String> insert, Set<String> delete, Set<String> fixSet) {
+        fixSet.forEach(s -> {
+            String[] temp = s.split(separator);
+            if(insert.contains(temp[1])){
+                delete.add(temp[0]);
+            }
+            if(delete.contains(temp[0])){
+                insert.add(temp[1]);
+            }
+        });
+    }
+
+    /**
+     * 对update和move中多源或多映射的情况进行处理
+     * @param insert 新增集
+     * @param delete 删除集
+     * @param update 修改集
+     * @param list 需要被处理的原数据
+     * @param srcsToOneDst 是否为多对一，true表示多对一，false表示一对多
+     * @return 由原数据处理后得到的新集，一般为处理后的update或move
+     */
     private static Set<String> mergeLines(Set<String> insert, Set<String> delete, Set<String> update, java.util.List<String> list, boolean srcsToOneDst) {
         if(list.isEmpty() || list.size() == 1){
             return new HashSet<>(list);
         }
-        Set<String> fixList = new HashSet<>();
+        Set<String> fixSet = new HashSet<>();
         Map<String, String> tempMap = new HashMap<>(list.size());
         list.sort(Comparator.naturalOrder());
         for (String s : list) {
@@ -221,26 +255,26 @@ public class GumtreeMatch {
                 insert.add(temp[1]);
                 delete.add(temp[0]);
                 if(srcsToOneDst){
-                    delete.add(tempMap.get(temp[1]));
+                    delete.add(tempMap.get(key));
                 }else {
-                    insert.add(tempMap.get(temp[0]));
+                    insert.add(tempMap.get(key));
                 }
             }
             tempMap.remove(key);
         }
-        tempMap.keySet().forEach(t -> fixList.add(
+        tempMap.keySet().forEach(t -> fixSet.add(
                 srcsToOneDst ? tempMap.get(t) + separator + t
                         : t + separator + tempMap.get(t)
         ));
-        return fixList;
+        return fixSet;
     }
 
     public static void main(String[] args) {
         // test java of file
         String src = "D:\\gumtree\\javaDiff\\";
-        String commitId = "e83bf34374ca9157b344be18c6f56cdaf90ecc11" +"\\";
-        String srcFile = src + commitId + "src_main_java_com_test_packageTest2_testRename_RenameTest1.java";
-        String dstFile = src + commitId + "src_main_java_com_test_packageTest2_testRename_RenameTest1-dst.java";
+        String commitId = "9b91a2506e638bc95711432967a4853726fc1aeb" +"\\";
+        String srcFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4.java";
+        String dstFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4-dst.java";
         String output= src + commitId+ "mapping.json";
         Map<String, Set<String>> result = matchFile(srcFile, dstFile);
         System.out.println(result);
@@ -273,6 +307,9 @@ public class GumtreeMatch {
         }
     }
 
+    /**
+     * 可以处理的文件类型
+     */
     public enum Language{
 
         /**
