@@ -272,9 +272,9 @@ public class GumtreeMatch {
     public static void main(String[] args) {
         // test java of file
         String src = "D:\\gumtree\\javaDiff\\";
-        String commitId = "9b91a2506e638bc95711432967a4853726fc1aeb" +"\\";
-        String srcFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4.java";
-        String dstFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4-dst.java";
+        String commitId = "1e2e4bf82f0a1a4f3c4ebbd0d01a749fc387156c" +"\\";
+        String srcFile = src + commitId + "src_main_java_com_test_packageTest3_test13.java";
+        String dstFile = src + commitId + "src_main_java_com_test_packageTest3_test13-dst.java";
         String output= src + commitId+ "mapping.json";
         Map<String, Set<String>> result = matchFile(srcFile, dstFile);
         System.out.println(result);
