@@ -17,13 +17,6 @@ import java.io.*;
 public class BabelTreeGenerator extends TreeGenerator {
     @Override
     public TreeContext generate(Reader r) throws IOException {
-        CompilerEnvirons env = new CompilerEnvirons();
-        env.setRecordingLocalJsDocComments(true);
-        env.setAllowSharpComments(true);
-        env.setRecordingComments(true);
-        env.setReservedKeywordAsIdentifier(false);
-        env.setLanguageVersion(Context.VERSION_ES6);
-        Parser p = new Parser(env);
         try {
             String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js";
             String file = "C:\\Users\\50306\\Desktop\\test\\a.js";

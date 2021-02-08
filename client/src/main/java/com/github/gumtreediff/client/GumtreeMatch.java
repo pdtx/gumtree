@@ -5,6 +5,7 @@ import com.github.gumtreediff.actions.EditScriptGenerator;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.gen.js.BabelTreeGenerator;
 import com.github.gumtreediff.gen.js.RhinoTreeGenerator;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
@@ -53,8 +54,10 @@ public class GumtreeMatch {
                     dst =  new JdtTreeGenerator().generateFrom().file(dstFile);
                     break;
                 case JS:
-                    src = new RhinoTreeGenerator().generateFrom().file(srcFile);
-                    dst = new RhinoTreeGenerator().generateFrom().file(dstFile);
+//                    src = new RhinoTreeGenerator().generateFrom().file(srcFile);
+//                    dst = new RhinoTreeGenerator().generateFrom().file(dstFile);
+                    src = new BabelTreeGenerator().generateFrom().file(srcFile);
+                    dst = new BabelTreeGenerator().generateFrom().file(dstFile);
                     break;
                 default:
                     break;
