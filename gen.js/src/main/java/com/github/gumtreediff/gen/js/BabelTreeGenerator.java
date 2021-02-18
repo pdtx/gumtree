@@ -1,50 +1,139 @@
 package com.github.gumtreediff.gen.js;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.github.gumtreediff.gen.Register;
 import com.github.gumtreediff.gen.Registry;
 import com.github.gumtreediff.gen.SyntaxException;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.tree.TreeContext;
-import org.mozilla.javascript.CompilerEnvirons;
-import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
-import org.mozilla.javascript.Parser;
-import org.mozilla.javascript.ast.AstRoot;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static com.github.gumtreediff.gen.js.JSNode.generateNode;
 
 @Register(id = "js-babel", accept = "\\.js$", priority = Registry.Priority.MAXIMUM)
 public class BabelTreeGenerator extends TreeGenerator {
+
+    static List<String> ignoreList = Arrays.asList("loc", "range","start", "end", "type", "kind", "_babelType"
+        ,"type--Identifier","_babelType-Identifier","value");
+
     @Override
     public TreeContext generate(Reader r) throws IOException {
-        CompilerEnvirons env = new CompilerEnvirons();
-        env.setRecordingLocalJsDocComments(true);
-        env.setAllowSharpComments(true);
-        env.setRecordingComments(true);
-        env.setReservedKeywordAsIdentifier(false);
-        env.setLanguageVersion(Context.VERSION_ES6);
-        Parser p = new Parser(env);
         try {
-            String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js";
-            String file = "C:\\Users\\50306\\Desktop\\test\\a.js";
-            String command = "node " + babel + " " + file;
-            Process pr = Runtime.getRuntime().exec(command);
-            InputStream in = pr.getInputStream();
-            BufferedReader read = new BufferedReader(new InputStreamReader(in));
-//            String line = null;
-//            StringBuilder result = new StringBuilder();
-//            while ((line = read.readLine()) != null) {
-//                result.append(line);
-//            }
-            AstRoot root = (AstRoot) (Object) read;
+            String line;
+            StringBuilder result = new StringBuilder();
+            while ((line = ((BufferedReader)r).readLine()) != null) {
+                result.append(line);
+            }
+            JSONObject jsonObject = JSONObject.parseObject(result.toString());
+            JSNode root = generateNode(jsonObject);
+            if(root == null){
+                return null;
+            }
+            buildTree(getChildren(jsonObject), root);
+
             BabelTreeVisitor visitor = new BabelTreeVisitor(root);
             root.visitAll(visitor);
+
             return visitor.getTreeContext();
         } catch (EvaluatorException e) {
             String message = String.format("Syntax error: %s at line %d, column %d",
                     e.getMessage(), e.lineNumber(), e.columnNumber());
             throw new SyntaxException(message, e);
         }
+    }
+
+    public void buildTree(List<Object> list, JSNode parent){
+        if(list == null || list.isEmpty()){
+            return;
+        }
+        list.forEach(t -> {
+            if(t instanceof JSONArray){
+                buildTree(Arrays.asList(((JSONArray) t).toArray()), parent);
+                return;
+            }
+            if(! (t instanceof JSONObject)){
+                return;
+            }
+            JSONObject jsonObject = (JSONObject) t;
+            JSNode jsNode = generateNode(jsonObject);
+            if(jsNode == null){
+                return;
+            }
+            parent.addChild(jsNode);
+            jsNode.setParent(parent);
+
+            buildTree(getChildren(jsonObject), jsNode);
+        });
+    }
+
+    /**
+     * 获取JSON对象可以转化为JSNode的子元素
+     * 这里暂定拥有loc等位置信息的JSON对象才可以转换为JSNode
+     * @param jsonObject JSON
+     * @return 子元素列表
+     */
+    List<Object> getChildren(JSONObject jsonObject){
+        List<Object> children = new ArrayList<>();
+        for(Map.Entry entry : jsonObject.entrySet()){
+            if(ignoreList.contains(entry.getKey().toString())){
+                continue;
+            }
+            Object value = entry.getValue();
+            // 排除value为null，Integer, Boolean, Double, String 等情况
+            if(! (value instanceof JSONObject) && ! (value instanceof JSONArray)){
+                continue;
+            }
+            if(value instanceof JSONArray){
+                children.add(generateObjectWithListAsChildren((JSONArray) value));
+            }else {
+                children.add(value);
+            }
+        }
+        return children;
+    }
+
+    /**
+     * 为一组元素生成一个无标签的父结点，用于补充建立层级关系
+     * @param array 子元素列表
+     * @return 父节点
+     */
+    private JSONObject generateObjectWithListAsChildren(JSONArray array){
+        if(array == null || array.isEmpty()){
+            return new JSONObject();
+        }
+        JSONObject jsonObject = new JSONObject();
+
+        for(int i = 0;i< array.size();i++){
+            jsonObject.put("children"+ i, array.get(i));
+        }
+
+        JSONObject loc = new JSONObject();
+        JSONObject start = new JSONObject();
+        JSONObject end = new JSONObject();
+        JSONObject startO = array.getJSONObject(0);
+        JSONObject endO = array.getJSONObject(array.size()-1);
+
+        JSONObject startLoc = startO.getJSONObject("loc");
+        JSONObject endLoc = endO.getJSONObject("loc");
+        start.put("line", startLoc.getJSONObject("start").getInteger("line"));
+        end.put("line", endLoc.getJSONObject("end").getInteger("line"));
+        loc.putIfAbsent("start", start);
+        loc.putIfAbsent("end", end);
+        jsonObject.put("loc", loc);
+        jsonObject.putIfAbsent("start", startO.getInteger("start"));
+        jsonObject.putIfAbsent("end", endO.getInteger("end"));
+        jsonObject.put("type", "list");
+        jsonObject.put("value", null);
+        return jsonObject;
     }
 
     public static String string2json(String s) {

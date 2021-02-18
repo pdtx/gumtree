@@ -34,8 +34,9 @@ const options = {
 }
 process.argv.forEach(function (val, index) {
     if (index === 1) {
+        const args = process.argv.slice(2);
         const fs = require('fs');
-        const data = fs.readFileSync(val, {encoding: "utf8"});
+        const data = fs.readFileSync(args[0], {encoding: "utf8"});
         const ast = babelEslint.parse(`${data}`, options);
         console.log(JSON.stringify(ast));
     }

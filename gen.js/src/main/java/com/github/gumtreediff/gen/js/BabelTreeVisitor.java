@@ -3,7 +3,6 @@ package com.github.gumtreediff.gen.js;
 import com.github.gumtreediff.tree.DefaultTree;
 import com.github.gumtreediff.tree.Tree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.*;
 
 import java.util.HashMap;
@@ -15,12 +14,14 @@ public class BabelTreeVisitor implements NodeVisitor {
     private Map<AstNode, Tree> trees;
     private TreeContext context;
 
-    public BabelTreeVisitor(AstRoot root) {
+    public BabelTreeVisitor(AstNode root) {
         trees = new HashMap<>();
         context = new TreeContext();
         Tree tree = buildTree(root);
         context.setRoot(tree);
     }
+
+
 
     public TreeContext getTreeContext() {
         return context;
@@ -28,42 +29,33 @@ public class BabelTreeVisitor implements NodeVisitor {
 
     @Override
     public boolean visit(AstNode node) {
-        if (node instanceof AstRoot)
-            return true;
-        else {
-            DefaultTree t = (DefaultTree) buildTree(node);
-            Tree p = trees.get(node.getParent());
-            p.addChild(t);
-
-            t.setBeginLine(node.getLineno());
-            t.setEndLine(node.getLineno());
-            if (node instanceof FunctionNode) {
-                t.setEndLine(((FunctionNode) node).getEndLineno());
-            }
-
-            if (node instanceof Name) {
-                Name name = (Name) node;
-                t.setLabel(name.getIdentifier());
-            } else if (node instanceof StringLiteral) {
-                StringLiteral literal = (StringLiteral) node;
-                t.setLabel(literal.getValue());
-            } else if (node instanceof NumberLiteral) {
-                NumberLiteral l = (NumberLiteral) node;
-                t.setLabel(l.getValue());
-            } else if (node instanceof Comment) {
-                Comment c = (Comment) node;
-                t.setLabel(c.getValue());
-            }
-
+        if(node == null){
             return true;
         }
+        DefaultTree t = (DefaultTree) trees.get(node);
+        if(t == null){
+            t = new DefaultTree(type(((JSNode)node).getKind()), Tree.NO_LABEL);
+            trees.put(node, t);
+        }
+        if(node.getParent() == null){
+            return true;
+        }
+        t.setBeginLine(node.getLineno());
+        t.setEndLine(((JSNode)node).getEndLineno());
+        t.setLabel(((JSNode) node).getValue());
+        t.setPos(node.getPosition());
+        t.setLength(node.getLength());
+        t.setParent(trees.get(node.getParent()));
+        t.getParent().addChild(t);
+
+        return true;
     }
 
-    private Tree buildTree(AstNode node) {
-        AstNode n = node;
-        Tree t = context.createTree(type(Token.typeToName(node.getType())), Tree.NO_LABEL);
-        t.setPos(node.getAbsolutePosition());
-        t.setLength(node.getLength());
+    DefaultTree buildTree(AstNode node) {
+        if(node == null){
+            return null;
+        }
+        DefaultTree t = new DefaultTree(type(((JSNode)node).getKind()), Tree.NO_LABEL);
         trees.put(node, t);
         return t;
     }
