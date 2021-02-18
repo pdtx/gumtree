@@ -29,6 +29,7 @@ import static com.github.gumtreediff.client.GumtreeMatch.Language.JS;
 public class GumtreeMatch {
 
     static Map<String, Set<String>> emptyResult = new HashMap<>(0);
+    static String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js".replace("/","\\");
     static String charsetName = "UTF-8";
     static String separator = "#";
     static String KEY_INSERT = "INSERT";
@@ -54,7 +55,6 @@ public class GumtreeMatch {
                     dst =  new JdtTreeGenerator().generateFrom().file(dstFile);
                     break;
                 case JS:
-                    String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js".replace("/","\\");
                     String srcCommand = "node " + babel + " " + srcFile;
                     String dstCommand = "node " + babel + " " + dstFile;
                     Process pr = Runtime.getRuntime().exec(srcCommand);
@@ -172,6 +172,7 @@ public class GumtreeMatch {
                 delete.add(begin+"-"+end);
             }
         }
+
         result.put(KEY_INSERT, insert);
         result.put(KEY_UPDATE, update);
         result.put(KEY_DELETE, delete);
@@ -290,6 +291,21 @@ public class GumtreeMatch {
         return fixSet;
     }
 
+    /**
+     * 匹配两个文件并将匹配结果输出至指定文件
+     * @param srcFile 改动前文件
+     * @param dstFile 改动后文件
+     * @param outputFile 指定输出文件
+     */
+    public static void matchFileAndOutputToFile(String srcFile, String dstFile, String outputFile){
+        Map<String, Set<String>> result = matchFile(srcFile, dstFile);
+        try {
+            outputToFile(outputFile, result.toString());
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
         // test java of file
         String src = "D:\\gumtree\\javaDiff\\";
@@ -299,14 +315,8 @@ public class GumtreeMatch {
         String jsSrc = "D:\\gumtree\\jsDiff\\";
         String jsSrcFile = jsSrc + "Measure.js";
         String jsDstFile = jsSrc + "Measure2.js";
-        String output= src + commitId+ "mapping.json";
         Map<String, Set<String>> result = matchFile(jsSrcFile, jsDstFile);
         System.out.println(result);
-//        try {
-//            outputToFile(output, result.toString());
-//        } catch (IOException e){
-//            e.printStackTrace();
-//        }
     }
 
     /**

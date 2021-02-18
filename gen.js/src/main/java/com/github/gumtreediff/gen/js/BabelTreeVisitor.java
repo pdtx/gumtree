@@ -17,7 +17,7 @@ public class BabelTreeVisitor implements NodeVisitor {
     public BabelTreeVisitor(AstNode root) {
         trees = new HashMap<>();
         context = new TreeContext();
-        Tree tree = buildTree(root);
+        Tree tree = createTree(root);
         context.setRoot(tree);
     }
 
@@ -51,7 +51,7 @@ public class BabelTreeVisitor implements NodeVisitor {
         return true;
     }
 
-    DefaultTree buildTree(AstNode node) {
+    DefaultTree createTree(AstNode node) {
         if(node == null){
             return null;
         }

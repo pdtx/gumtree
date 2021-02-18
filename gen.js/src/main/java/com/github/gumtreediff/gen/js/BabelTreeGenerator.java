@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.gumtreediff.gen.js.JSNode.generateNode;
 
@@ -119,13 +120,22 @@ public class BabelTreeGenerator extends TreeGenerator {
         JSONObject loc = new JSONObject();
         JSONObject start = new JSONObject();
         JSONObject end = new JSONObject();
+        AtomicInteger startLine = new AtomicInteger(Integer.MAX_VALUE);
+        AtomicInteger endLine = new AtomicInteger(-1);
+        array.forEach(a -> {
+            JSONObject o = ((JSONObject)a).getJSONObject("loc");
+            if(o.getJSONObject("start").getInteger("line") < startLine.get()){
+                startLine.set(o.getJSONObject("start").getInteger("line"));
+            }
+            if(o.getJSONObject("end").getInteger("line") > endLine.get()){
+                endLine.set(o.getJSONObject("end").getInteger("line"));
+            }
+        });
         JSONObject startO = array.getJSONObject(0);
         JSONObject endO = array.getJSONObject(array.size()-1);
 
-        JSONObject startLoc = startO.getJSONObject("loc");
-        JSONObject endLoc = endO.getJSONObject("loc");
-        start.put("line", startLoc.getJSONObject("start").getInteger("line"));
-        end.put("line", endLoc.getJSONObject("end").getInteger("line"));
+        start.put("line", startLine);
+        end.put("line", endLine);
         loc.putIfAbsent("start", start);
         loc.putIfAbsent("end", end);
         jsonObject.put("loc", loc);

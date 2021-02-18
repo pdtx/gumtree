@@ -52,16 +52,13 @@ public class JSNode extends AstNode {
 
         int positionStart = jsonObject.getInteger("start");
         int positionEnd = jsonObject.getInteger("end");
-        String kind = jsonObject.getString("kind");
+        String kind = jsonObject.getString("type");
 
         JSNode node = new JSNode(positionStart);
         node.setLineno(loc.getJSONObject("start").getInteger("line"));
         node.setEndLineno(loc.getJSONObject("end").getInteger("line"));
         node.setPosition(positionStart);
         node.setLength(positionEnd-positionStart+1);
-        if(kind == null){
-            kind = jsonObject.getString("type");
-        }
         if(kind == null){
             kind = jsonObject.getString("_babelType");
         }
@@ -72,6 +69,9 @@ public class JSNode extends AstNode {
         String value = jsonObject.getString("value");
         if(value == null){
             value = jsonObject.getString("name");
+        }
+        if(value == null){
+            value = jsonObject.getString("kind");
         }
         if(value == null){
             value = jsonObject.getString("identifierName");
