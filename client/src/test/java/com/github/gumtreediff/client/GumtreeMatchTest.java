@@ -79,10 +79,10 @@ class GumtreeMatchTest {
 
     @Test
     void jsMatchChildrenStatementUpdate() {
-        String src = "D:\\gumtree\\javaDiff\\";
+        String src = "D:\\gumtree\\jsDiff\\";
         String commitId = "0b246ccfevwcs-ce3d3cw-qcwx2xs1" +"\\";
-        String srcFile = src + commitId + "Register.js";
-        String dstFile = src + commitId + "Register2.js";
+        String srcFile = src + "Measure.js";
+        String dstFile = src + "Measure2.js";
 
         Map<String, Set<String>> result = GumtreeMatch.matchFile(srcFile, dstFile);
         java.util.List<String> expectedInsert = Arrays.asList();
@@ -133,6 +133,20 @@ class GumtreeMatchTest {
             assertTrue(expectedMove.contains(s),
                     "redundant move: "+ s);
         }
+    }
+
+    @Test
+    public  void main1() {
+        // test java of file
+//        String src = "D:\\gumtree\\javaDiff\\";
+//        String commitId = "9b91a2506e638bc95711432967a4853726fc1aeb" +"\\";
+//        String srcFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4.java";
+//        String dstFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4-dst.java";
+        String jsSrc = "D:\\gumtree\\jsDiff\\";
+        String jsSrcFile = jsSrc + "Measure.js";
+        String jsDstFile = jsSrc + "Measure2.js";
+        Map<String, Set<String>> result = GumtreeMatch.matchFile(jsSrcFile, jsDstFile);
+        System.out.println(result);
     }
 
 }

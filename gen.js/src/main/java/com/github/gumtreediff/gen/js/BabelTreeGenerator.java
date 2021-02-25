@@ -23,8 +23,7 @@ import static com.github.gumtreediff.gen.js.JSNode.generateNode;
 @Register(id = "js-babel", accept = "\\.js$", priority = Registry.Priority.MAXIMUM)
 public class BabelTreeGenerator extends TreeGenerator {
 
-    static List<String> ignoreList = Arrays.asList("loc", "range","start", "end", "type", "kind", "_babelType"
-        ,"type--Identifier","_babelType-Identifier","value");
+    static List<String> ignoreList = Arrays.asList("loc", "range","start", "end", "type", "kind", "_babelType", "value","tokens","token");
 
     @Override
     public TreeContext generate(Reader r) throws IOException {
@@ -78,7 +77,7 @@ public class BabelTreeGenerator extends TreeGenerator {
 
     /**
      * 获取JSON对象可以转化为JSNode的子元素
-     * 这里暂定拥有loc等位置信息的JSON对象才可以转换为JSNode
+     * 这里暂定拥有位置信息loc的JSON对象才可以转换为JSNode
      * @param jsonObject JSON
      * @return 子元素列表
      */

@@ -58,6 +58,7 @@ public class GumtreeMatch {
                     String srcCommand = "node " + babel + " " + srcFile;
                     String dstCommand = "node " + babel + " " + dstFile;
                     Process pr = Runtime.getRuntime().exec(srcCommand);
+                    pr.waitFor();
                     InputStream in = pr.getInputStream();
                     BufferedReader r = new BufferedReader(new InputStreamReader(in, charsetName));
                     src = new BabelTreeGenerator().generate(r);
