@@ -5,6 +5,7 @@ import com.github.gumtreediff.actions.EditScriptGenerator;
 import com.github.gumtreediff.actions.SimplifiedChawatheScriptGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.gen.js.BabelTreeGenerator;
 import com.github.gumtreediff.gen.js.RhinoTreeGenerator;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
@@ -28,6 +29,7 @@ import static com.github.gumtreediff.client.GumtreeMatch.Language.JS;
 public class GumtreeMatch {
 
     static Map<String, Set<String>> emptyResult = new HashMap<>(0);
+    static String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js".replace("/","\\");
     static String charsetName = "UTF-8";
     static String separator = "#";
     static String KEY_INSERT = "INSERT";
@@ -53,8 +55,23 @@ public class GumtreeMatch {
                     dst =  new JdtTreeGenerator().generateFrom().file(dstFile);
                     break;
                 case JS:
-                    src = new RhinoTreeGenerator().generateFrom().file(srcFile);
-                    dst = new RhinoTreeGenerator().generateFrom().file(dstFile);
+                    String srcCommand = "node " + babel + " " + srcFile;
+                    String dstCommand = "node " + babel + " " + dstFile;
+                    Process pr = Runtime.getRuntime().exec(srcCommand);
+                    InputStream in = pr.getInputStream();
+                    BufferedReader r = new BufferedReader(new InputStreamReader(in, charsetName));
+                    src = new BabelTreeGenerator().generate(r);
+                    r.close();
+                    in.close();
+                    pr.destroy();
+
+                    Process pr2 = Runtime.getRuntime().exec(dstCommand);
+                    InputStream in2 = pr2.getInputStream();
+                    BufferedReader r2 = new BufferedReader(new InputStreamReader(in2, charsetName));
+                    dst = new BabelTreeGenerator().generate(r2);
+                    r2.close();
+                    in2.close();
+                    pr2.destroy();
                     break;
                 default:
                     break;
@@ -155,6 +172,7 @@ public class GumtreeMatch {
                 delete.add(begin+"-"+end);
             }
         }
+
         result.put(KEY_INSERT, insert);
         result.put(KEY_UPDATE, update);
         result.put(KEY_DELETE, delete);
@@ -185,6 +203,7 @@ public class GumtreeMatch {
         Set<String> fixUpdate = mergeLines(insert, delete, tempUpdate, new ArrayList<>(tempUpdate), false);
 
         // 3. 若UPDATE所在节点行号范围与INSERT,DELETE相同，则移除前者并拆解为DELETE和INSERT
+        // 若update只与其中一个同，则移除后者，保留前者
         // MOVE同上
         divideLines(insert, delete, fixUpdate);
         divideLines(insert, delete, fixMove);
@@ -204,6 +223,7 @@ public class GumtreeMatch {
 
     /**
      * 将update和move与insert，delete重复的行号拆解为delete，insert
+     * 若update和move只与其中一个同，则移除后者，保留前者
      * @param insert 新增集
      * @param delete 删除集
      * @param fixSet 待拆解集，这里为update和move
@@ -211,11 +231,13 @@ public class GumtreeMatch {
     private static void divideLines(Set<String> insert, Set<String> delete, Set<String> fixSet) {
         fixSet.forEach(s -> {
             String[] temp = s.split(separator);
-            if(insert.contains(temp[1])){
+            if(insert.contains(temp[1]) && delete.contains(temp[0])){
                 delete.add(temp[0]);
-            }
-            if(delete.contains(temp[0])){
                 insert.add(temp[1]);
+            }else if (insert.contains(temp[1])){
+                insert.remove(temp[1]);
+            } else if (delete.contains(temp[0])){
+                delete.remove(temp[0]);
             }
         });
     }
@@ -269,20 +291,32 @@ public class GumtreeMatch {
         return fixSet;
     }
 
-    public static void main(String[] args) {
-        // test java of file
-        String src = "D:\\gumtree\\javaDiff\\";
-        String commitId = "1e2e4bf82f0a1a4f3c4ebbd0d01a749fc387156c" +"\\";
-        String srcFile = src + commitId + "src_main_java_com_test_packageTest3_test13.java";
-        String dstFile = src + commitId + "src_main_java_com_test_packageTest3_test13-dst.java";
-        String output= src + commitId+ "mapping.json";
+    /**
+     * 匹配两个文件并将匹配结果输出至指定文件
+     * @param srcFile 改动前文件
+     * @param dstFile 改动后文件
+     * @param outputFile 指定输出文件
+     */
+    public static void matchFileAndOutputToFile(String srcFile, String dstFile, String outputFile){
         Map<String, Set<String>> result = matchFile(srcFile, dstFile);
-        System.out.println(result);
         try {
-            outputToFile(output, result.toString());
+            outputToFile(outputFile, result.toString());
         } catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        // test java of file
+        String src = "D:\\gumtree\\javaDiff\\";
+        String commitId = "9b91a2506e638bc95711432967a4853726fc1aeb" +"\\";
+        String srcFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4.java";
+        String dstFile = src + commitId + "src_main_java_com_test_packageTest1_testRename_testRename4-dst.java";
+        String jsSrc = "D:\\gumtree\\jsDiff\\";
+        String jsSrcFile = jsSrc + "Measure.js";
+        String jsDstFile = jsSrc + "Measure2.js";
+        Map<String, Set<String>> result = matchFile(jsSrcFile, jsDstFile);
+        System.out.println(result);
     }
 
     /**
@@ -315,11 +349,11 @@ public class GumtreeMatch {
         /**
          * js
          */
-        JS("js"),
+        JS(".js"),
         /**
          * java
          */
-        JAVA("java");
+        JAVA(".java");
 
         public String getSuffix() {
             return suffix;
