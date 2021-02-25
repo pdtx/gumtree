@@ -32,7 +32,6 @@ class GumtreeMatchTest {
         verify(result, expectedInsert, expectedDelete, expectedUpdate, expectedMove);
     }
 
-
     @Test
     void matchChildrenStatementUpdate() {
         String src = "D:\\gumtree\\javaDiff\\";
@@ -50,6 +49,49 @@ class GumtreeMatchTest {
                 "87-87#87-87",
                 "88-88#88-88",
                 "111-111#111-111"
+        );
+
+        verify(result, expectedInsert, expectedDelete, expectedUpdate, expectedMove);
+    }
+
+
+    // JS部分
+    @Test
+    void jsMatchStatementUpdate() {
+        String src = "D:\\gumtree\\javaDiff\\";
+        String commitId = "0a233c838nc29-c873hc72w-d299xc" +"\\";
+        String srcFile = src + commitId + "Register.js";
+        String dstFile = src + commitId + "Register2.js";
+
+        Map<String, Set<String>> result = GumtreeMatch.matchFile(srcFile, dstFile);
+        java.util.List<String> expectedInsert = Arrays.asList();
+        java.util.List<String> expectedDelete = Arrays.asList();
+        java.util.List<String> expectedMove= Arrays.asList();
+        java.util.List<String> expectedUpdate = Arrays.asList(
+                "131-131#131-131",
+                "192-192#192-192",
+                "193-193#193-193",
+                "194-194#194-194"
+        );
+
+        verify(result, expectedInsert, expectedDelete, expectedUpdate, expectedMove);
+    }
+
+    @Test
+    void jsMatchChildrenStatementUpdate() {
+        String src = "D:\\gumtree\\javaDiff\\";
+        String commitId = "0b246ccfevwcs-ce3d3cw-qcwx2xs1" +"\\";
+        String srcFile = src + commitId + "Register.js";
+        String dstFile = src + commitId + "Register2.js";
+
+        Map<String, Set<String>> result = GumtreeMatch.matchFile(srcFile, dstFile);
+        java.util.List<String> expectedInsert = Arrays.asList();
+        java.util.List<String> expectedDelete = Arrays.asList();
+        java.util.List<String> expectedMove= Arrays.asList();
+        java.util.List<String> expectedUpdate = Arrays.asList(
+                "145-145#145-145",
+                "157-157#157-157",
+                "160-160#160-160"
         );
 
         verify(result, expectedInsert, expectedDelete, expectedUpdate, expectedMove);
