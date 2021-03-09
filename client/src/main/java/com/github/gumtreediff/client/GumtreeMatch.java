@@ -28,14 +28,14 @@ import static com.github.gumtreediff.client.GumtreeMatch.Language.JS;
  **/
 public class GumtreeMatch {
 
-    static Map<String, Set<String>> emptyResult = new HashMap<>(0);
-    static String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js".replace("/","\\");
-    static String charsetName = "UTF-8";
-    static String separator = "#";
-    static String KEY_INSERT = "INSERT";
-    static String KEY_MOVE = "MOVE";
-    static String KEY_DELETE = "DELETE";
-    static String KEY_UPDATE = "UPDATE";
+    public static Map<String, Set<String>> emptyResult = new HashMap<>(0);
+    public static String babel = "gen.js/src/main/java/com/github/gumtreediff/gen/js/babelEsLint.js".replace("/","\\");
+    public static String charsetName = "UTF-8";
+    public static String separator = "#";
+    public static String KEY_INSERT = "INSERT";
+    public static String KEY_MOVE = "MOVE";
+    public static String KEY_DELETE = "DELETE";
+    public static String KEY_UPDATE = "UPDATE";
 
     /**
      * 对两个文件进行匹
